@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main, staging, dev]
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - "feature/**"
 
 jobs:
   validate-source-branch:
@@ -11,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR source branch
+        if: github.event_name == 'pull_request'
         run: |
           # Pour les PRs vers main
           if [[ "${{ github.base_ref }}" == "main" ]]; then
@@ -35,6 +39,17 @@ jobs:
             if [[ ! "${{ github.event.pull_request.head.ref }}" =~ ^feature/ ]]; then
               echo "❌ Les pull requests vers dev doivent venir d'une branche feature/."
               echo "⚠️  Veuillez créer votre pull request depuis une branche feature/nom-du-dev."
+              exit 1
+            fi
+          fi
+
+      - name: Check feature branch naming
+        if: github.event_name == 'push'
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^feature/ ]]; then
+            if [[ ! "${{ github.ref_name }}" =~ ^feature/[a-z0-9-]+$ ]]; then
+              echo "❌ Le nom de la branche feature doit suivre le format: feature/nom-du-dev"
+              echo "⚠️  Exemple: feature/ajout-fonctionnalite"
               exit 1
             fi
           fi
