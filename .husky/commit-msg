@@ -5,7 +5,7 @@
 commit_msg=$(cat "$1")
 
 # Vérifier le format du message de commit
-if ! echo "$commit_msg" | grep -qE '^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?: .+'; then
+if ! echo "$commit_msg" | grep -qE '^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?:?.+'; then
   echo "❌ Format de message de commit invalide"
   echo "⚠️  Format attendu: type(scope): description"
   echo "⚠️  Types autorisés:"
