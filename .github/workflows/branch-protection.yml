@@ -2,7 +2,7 @@ name: Branch Protection
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
     types: [opened, synchronize, reopened]
 
 jobs:
@@ -10,10 +10,22 @@ jobs:
     name: Validate Source Branch
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from staging
+      - name: Check PR source branch
         run: |
-          if [[ "${{ github.event.pull_request.head.ref }}" != "staging" ]]; then
-            echo "❌ Les pull requests vers main doivent venir de la branche staging."
-            echo "⚠️  Veuillez créer votre pull request depuis la branche staging."
-            exit 1
+          # Pour les PRs vers main
+          if [[ "${{ github.base_ref }}" == "main" ]]; then
+            if [[ "${{ github.event.pull_request.head.ref }}" != "staging" ]]; then
+              echo "❌ Les pull requests vers main doivent venir de la branche staging."
+              echo "⚠️  Veuillez créer votre pull request depuis la branche staging."
+              exit 1
+            fi
+          fi
+
+          # Pour les PRs vers staging
+          if [[ "${{ github.base_ref }}" == "staging" ]]; then
+            if [[ "${{ github.event.pull_request.head.ref }}" != "dev" ]]; then
+              echo "❌ Les pull requests vers staging doivent venir de la branche dev."
+              echo "⚠️  Veuillez créer votre pull request depuis la branche dev."
+              exit 1
+            fi
           fi

@@ -2,12 +2,12 @@ name: Pull Request Workflow
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
     types: [opened, synchronize, reopened]
 
 jobs:
   validate:
-    name: Validation
+    name: "✅ Validation du code"
     runs-on: ubuntu-latest
 
     steps:
@@ -19,5 +19,9 @@ jobs:
           echo "Validating repository structure..."
           if [ ! -d ".github" ]; then
             echo "Error: .github directory is missing"
+            exit 1
+          fi
+          if [ ! -f "README.md" ]; then
+            echo "Error: README.md is missing"
             exit 1
           fi
