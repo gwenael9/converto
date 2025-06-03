@@ -2,7 +2,7 @@ name: Branch Protection
 
 on:
   pull_request:
-    branches: [main, staging]
+    branches: [main, staging, dev]
     types: [opened, synchronize, reopened]
 
 jobs:
@@ -26,6 +26,15 @@ jobs:
             if [[ "${{ github.event.pull_request.head.ref }}" != "dev" ]]; then
               echo "❌ Les pull requests vers staging doivent venir de la branche dev."
               echo "⚠️  Veuillez créer votre pull request depuis la branche dev."
+              exit 1
+            fi
+          fi
+
+          # Pour les PRs vers dev
+          if [[ "${{ github.base_ref }}" == "dev" ]]; then
+            if [[ ! "${{ github.event.pull_request.head.ref }}" =~ ^feature/ ]]; then
+              echo "❌ Les pull requests vers dev doivent venir d'une branche feature/."
+              echo "⚠️  Veuillez créer votre pull request depuis une branche feature/nom-du-dev."
               exit 1
             fi
           fi
