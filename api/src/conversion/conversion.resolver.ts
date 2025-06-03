@@ -8,16 +8,23 @@ import { FileUpload } from 'graphql-upload-ts';
 export class ConversionResolver {
   constructor(private readonly conversionService: ConversionService) {}
 
-  @Mutation(() => ConversionOutput)
+  @Mutation(() => ConversionOutput, {
+    description: 'Convertit un fichier PDF en DOCX ou vice versa',
+  })
   async convertFile(
-    @Args('input') input: ConversionInput,
+    @Args('input', { description: "Données d'entrée pour la conversion" })
+    input: ConversionInput,
   ): Promise<ConversionOutput> {
     console.log('Resolver input:', input);
     return await this.conversionService.convertFile(input);
   }
 
-  @Query(() => ConversionOutput)
-  async getConversionStatus(@Args('id') id: string): Promise<ConversionOutput> {
+  @Query(() => ConversionOutput, {
+    description: "Récupère le statut d'une conversion",
+  })
+  async getConversionStatus(
+    @Args('id', { description: 'Identifiant de la conversion' }) id: string,
+  ): Promise<ConversionOutput> {
     return this.conversionService.getConversionStatus(id);
   }
 }

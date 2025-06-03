@@ -9,16 +9,22 @@ export enum ConversionType {
 
 registerEnumType(ConversionType, {
   name: 'ConversionType',
-  description: 'The type of conversion to perform',
+  description: 'Type de conversion à effectuer sur le fichier',
 });
 
-@InputType()
+@InputType({ description: "Données d'entrée pour la conversion de fichier" })
 export class ConversionInput {
-  @Field(() => GraphQLUpload)
+  @Field(() => GraphQLUpload, {
+    description:
+      'Le fichier à convertir (PDF ou DOCX selon le type de conversion)',
+  })
   @IsNotEmpty()
   file: Promise<FileUpload>;
 
-  @Field(() => ConversionType)
+  @Field(() => ConversionType, {
+    description:
+      'Le type de conversion à effectuer (PDF vers DOCX ou DOCX vers PDF)',
+  })
   @IsEnum(ConversionType)
   conversionType: ConversionType;
 }

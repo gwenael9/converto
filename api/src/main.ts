@@ -8,9 +8,9 @@ async function bootstrap() {
 
   app.enableCors();
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT_API);
   console.log(
-    `🚀 Server ready at http://localhost:${process.env.PORT ?? 3000}/graphql`,
+    `🚀 Server ready at http://localhost:${process.env.PORT_API}/graphql`,
   );
 }
 bootstrap();
