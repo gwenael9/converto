@@ -1,16 +1,15 @@
 name: Branch Protection
 
 on:
-  pull_request:
+  push:
     branches: [main]
-    types: [opened, synchronize, reopened]
 
 jobs:
-  validate-source-branch:
-    name: Validate Source Branch
+  prevent-direct-push:
+    name: Prevent direct push to main
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from staging
+      - name: Check if push is from staging
         run: |
           if [[ "${{ github.event.pull_request.head.ref }}" != "staging" ]]; then
             echo "❌ Les pull requests vers main doivent venir de la branche staging."
