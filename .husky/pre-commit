@@ -4,13 +4,26 @@
 # Récupérer la branche actuelle
 current_branch=$(git symbolic-ref --short HEAD)
 
-# Vérifier si on essaie de commit sur main ou staging
-if [ "$current_branch" = "main" ] || [ "$current_branch" = "staging" ]; then
+# Vérifier si on essaie de commit sur main, staging ou dev
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "staging" ] || [ "$current_branch" = "dev" ]; then
   echo "❌ Les commits directs sur $current_branch ne sont pas autorisés."
   if [ "$current_branch" = "main" ]; then
     echo "⚠️  Seules les pull-requests depuis staging sont autorisées."
-  else
+  elif [ "$current_branch" = "staging" ]; then
     echo "⚠️  Seules les pull-requests depuis dev sont autorisées."
+  else
+    echo "⚠️  Seules les pull-requests depuis les branches feature/ sont autorisées."
   fi
   exit 1
-fi 
+fi
+
+# Vérifier les fichiers sensibles
+SENSITIVE_FILES=".env|.env.*|*.pem|*.key|*.cert|*.p12|*.pfx|id_rsa|id_dsa|*.log"
+for file in $(git diff --cached --name-only); do
+  if echo "$file" | grep -qE "$SENSITIVE_FILES"; then
+    echo "❌ Le fichier $file semble contenir des informations sensibles"
+    echo "⚠️  Veuillez vérifier que ce fichier ne contient pas de données confidentielles"
+    echo "⚠️  Si nécessaire, ajoutez-le à .gitignore"
+    exit 1
+  fi
+done 

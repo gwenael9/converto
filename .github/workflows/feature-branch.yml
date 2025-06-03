@@ -1,0 +1,23 @@
+name: Feature Branch Validation
+
+on:
+  push:
+    branches:
+      - "feature/**"
+
+jobs:
+  validate-feature-branch:
+    name: Validate Feature Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check feature branch naming
+        run: |
+          # Vérifier que la branche feature est créée à partir de dev
+          if [[ "${{ github.ref_name }}" =~ ^feature/ ]]; then
+            # Vérifier que le nom de la branche suit le format feature/nom-du-dev
+            if [[ ! "${{ github.ref_name }}" =~ ^feature/[a-z0-9-]+$ ]]; then
+              echo "❌ Le nom de la branche feature doit suivre le format: feature/nom-du-dev"
+              echo "⚠️  Exemple: feature/ajout-fonctionnalite"
+              exit 1
+            fi
+          fi
