@@ -11,7 +11,8 @@ jobs:
     steps:
       - name: Check if push is from staging
         run: |
-          if [[ "${{ github.ref }}" != "refs/heads/staging" ]]; then
-            echo "Direct pushes to main are not allowed. Please create a pull request from staging."
+          if [[ "${{ github.event.pull_request.head.ref }}" != "staging" ]]; then
+            echo "❌ Les pull requests vers main doivent venir de la branche staging."
+            echo "⚠️  Veuillez créer votre pull request depuis la branche staging."
             exit 1
           fi
