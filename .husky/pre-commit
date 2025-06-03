@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Récupérer la branche actuelle
+current_branch=$(git symbolic-ref --short HEAD)
+
+# Vérifier si on essaie de commit sur main
+if [ "$current_branch" = "main" ]; then
+  echo "❌ Les commits directs sur main ne sont pas autorisés."
+  echo "⚠️  Seul les pull-requests depuis staging sont autorisées."
+  exit 1
+fi 
