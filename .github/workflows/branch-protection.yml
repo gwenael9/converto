@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Check if PR is from staging
         run: |
-          if [[ "${{ github.head_ref }}" != "staging" ]]; then
+          if [[ "${{ github.event.pull_request.head.ref }}" != "staging" ]]; then
             echo "❌ Les pull requests vers main doivent venir de la branche staging."
             echo "⚠️  Veuillez créer votre pull request depuis la branche staging."
             exit 1
