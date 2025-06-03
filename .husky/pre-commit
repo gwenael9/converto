@@ -4,9 +4,13 @@
 # Récupérer la branche actuelle
 current_branch=$(git symbolic-ref --short HEAD)
 
-# Vérifier si on essaie de commit sur main
-if [ "$current_branch" = "main" ]; then
-  echo "❌ Les commits directs sur main ne sont pas autorisés."
-  echo "⚠️  Seul les pull-requests depuis staging sont autorisées."
+# Vérifier si on essaie de commit sur main ou staging
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "staging" ]; then
+  echo "❌ Les commits directs sur $current_branch ne sont pas autorisés."
+  if [ "$current_branch" = "main" ]; then
+    echo "⚠️  Seules les pull-requests depuis staging sont autorisées."
+  else
+    echo "⚠️  Seules les pull-requests depuis dev sont autorisées."
+  fi
   exit 1
 fi 
