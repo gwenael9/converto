@@ -18,7 +18,7 @@ if [ "$current_branch" = "main" ] || [ "$current_branch" = "staging" ] || [ "$cu
 fi
 
 # Vérifier les fichiers sensibles
-SENSITIVE_FILES=".env|.env.*|*.pem|*.key|*.cert|*.p12|*.pfx|id_rsa|id_dsa|*.log"
+SENSITIVE_FILES=".env|*.pem|*.key|*.cert|*.p12|*.pfx|id_rsa|id_dsa|*.log"
 for file in $(git diff --cached --name-only); do
   if echo "$file" | grep -qE "$SENSITIVE_FILES"; then
     echo "❌ Le fichier $file semble contenir des informations sensibles"
