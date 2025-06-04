@@ -8,7 +8,7 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT_API);
   console.log(
-    `🚀 Server ready at http://localhost:${process.env.PORT_API}/graphql`,
+    `Server ready at http://localhost:${process.env.PORT_API}/graphql`,
   );
 }
 bootstrap();
