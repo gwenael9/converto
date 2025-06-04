@@ -34,7 +34,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - ./.env
+      - ./.env.prod
     environment:
       - DB_HOST=${DB_HOST}
     restart: always
