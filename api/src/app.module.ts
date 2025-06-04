@@ -17,6 +17,7 @@ import { databaseConfig } from './config';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       graphiql: true,
+      csrfPrevention: false,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
       buildSchemaOptions: {
