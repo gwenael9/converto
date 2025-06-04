@@ -3,25 +3,40 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const execAsync = promisify(exec);
 
 @Injectable()
 export class ConversionService {
+  private s3Client: S3Client;
+
+  constructor() {
+    this.s3Client = new S3Client({
+      region: 'us-east-1',
+      endpoint: 'http://minio:9000',
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
+        secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      },
+    });
+  }
+
   async convertAndUpload(data: any): Promise<string> {
-    const fileName = data?.fileName || 'TEST.docx';
+    // Simulation : on reçoit un "chemin local" (plus tard ce sera une URL S3)
+    const localDocxPath = data?.localPath || path.resolve(__dirname, '../test-files/TEST.docx');
 
-    const inputFilePath = path.resolve(__dirname, '../test-files', fileName);
-    const outputDir = path.resolve(__dirname, '../test-files/output');
+    console.log('Input file path:', localDocxPath);
 
-    console.log('Input file path:', inputFilePath);
-    console.log('Output dir:', outputDir);
-
-    if (!fs.existsSync(inputFilePath)) {
-      throw new Error(`Input file not found: ${inputFilePath}`);
+    if (!fs.existsSync(localDocxPath)) {
+      throw new Error(`Input file not found: ${localDocxPath}`);
     }
 
-    const command = `soffice --headless --convert-to pdf "${inputFilePath}" --outdir "${outputDir}"`;
+    const outputDir = path.dirname(localDocxPath);
+
+    const command = `soffice --headless --convert-to pdf "${localDocxPath}" --outdir "${outputDir}"`;
 
     try {
       console.log('Running command:', command);
@@ -31,6 +46,7 @@ export class ConversionService {
       console.log('LibreOffice output:', stdout);
       if (stderr) console.error('LibreOffice error:', stderr);
 
+      const fileName = path.basename(localDocxPath);
       const outputFileName = fileName.replace(/\.docx$/, '.pdf');
       const outputFilePath = path.join(outputDir, outputFileName);
 
@@ -40,10 +56,39 @@ export class ConversionService {
 
       console.log('Conversion done. PDF saved at:', outputFilePath);
 
-      return outputFilePath;
+      // Upload vers S3
+      const bucketName = 'converted-files';
+      const key = outputFileName;
+
+      const fileContent = fs.readFileSync(outputFilePath);
+
+      const uploadCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: fileContent,
+        ContentType: 'application/pdf',
+      });
+
+      await this.s3Client.send(uploadCommand);
+
+      console.log(`File uploaded to S3: ${bucketName}/${key}`);
+
+      fs.unlinkSync(outputFilePath);
+      console.log(`Local file deleted: ${outputFilePath}`);
+
+      const getObjectCommand = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, { expiresIn: 600 });
+
+      console.log('Pre-signed URL:', signedUrl);
+
+      return signedUrl;
     } catch (error) {
-      console.error('Error during conversion:', error);
-      throw new Error('Conversion failed');
+      console.error('Error during conversion or upload:', error);
+      throw new Error('Conversion and upload failed');
     }
   }
 }
