@@ -1,0 +1,36 @@
+# Stage de build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copie des fichiers de dépendances
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Installation des dépendances
+RUN npm ci
+
+# Copie du code source
+COPY . .
+
+# Build de l'application
+RUN npm run build
+
+# Stage de production
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copie des fichiers nécessaires depuis le stage de build
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Variables d'environnement
+ENV NODE_ENV=production
+
+# Exposition du port
+EXPOSE 4000
+
+# Commande de démarrage
+CMD ["npm", "run", "start:prod"] 
