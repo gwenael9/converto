@@ -6,8 +6,8 @@ export class AppController {
   constructor(private readonly conversionService: ConversionService) {}
 
   @Get('test-convert')
-  async testConvert(@Query('file') fileName: string): Promise<string> {
-    const result = await this.conversionService.convertAndUpload({ fileName });
+  async testConvert(@Query('path') localPath: string): Promise<string> {
+    const result = await this.conversionService.convertAndUpload({ localPath });
     return result;
   }
 }
