@@ -5,6 +5,8 @@ import { join } from 'path';
 import { ConversionModule } from './conversion/conversion.module';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { databaseConfig } from './config';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { ConfigModule } from '@nestjs/config';
         numberScalarMode: 'integer',
       },
     }),
+    TypeOrmModule.forRoot(databaseConfig),
     ConversionModule,
   ],
 })

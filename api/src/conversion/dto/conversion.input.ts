@@ -1,15 +1,11 @@
 import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 import { FileUpload, GraphQLUpload } from 'graphql-upload-ts';
+import { FileType } from '../entities/conversion.entity';
 
-export enum ConversionType {
-  PDF_TO_DOCX = 'PDF_TO_DOCX',
-  DOCX_TO_PDF = 'DOCX_TO_PDF',
-}
-
-registerEnumType(ConversionType, {
-  name: 'ConversionType',
-  description: 'Type de conversion à effectuer sur le fichier',
+registerEnumType(FileType, {
+  name: 'FileType',
+  description: 'Type de fichier',
 });
 
 @InputType({ description: "Données d'entrée pour la conversion de fichier" })
@@ -21,10 +17,15 @@ export class ConversionInput {
   @IsNotEmpty()
   file: Promise<FileUpload>;
 
-  @Field(() => ConversionType, {
-    description:
-      'Le type de conversion à effectuer (PDF vers DOCX ou DOCX vers PDF)',
+  @Field(() => FileType, {
+    description: 'Le type de fichier source à convertir',
   })
-  @IsEnum(ConversionType)
-  conversionType: ConversionType;
+  @IsEnum(FileType)
+  sourceType: FileType;
+
+  @Field(() => FileType, {
+    description: 'Le type de fichier cible',
+  })
+  @IsEnum(FileType)
+  targetType: FileType;
 }
