@@ -3,7 +3,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const execAsync = promisify(exec);
@@ -24,8 +28,14 @@ export class ConversionService {
     });
   }
 
-  async convertAndUploadFromS3(bucket: string, key: string, conversionId: string): Promise<string> {
-    console.log(`Starting conversion for s3://${bucket}/${key}, conversionId=${conversionId}`);
+  async convertAndUploadFromS3(
+    bucket: string,
+    key: string,
+    conversionId: string,
+  ): Promise<string> {
+    console.log(
+      `Starting conversion for s3://${bucket}/${key}, conversionId=${conversionId}`,
+    );
 
     const localDocxPath = `/tmp/${conversionId}.docx`;
 
@@ -65,8 +75,10 @@ export class ConversionService {
 
     console.log('PDF generated:', outputPdfPath);
 
+    console.log('bucket', process.env.S3_BUCKET_CONVERT);
+
     // Upload .pdf sur S3
-    const convertedBucket = 'converted-files';
+    const convertedBucket = process.env.S3_BUCKET_CONVERT;
     const convertedKey = `${conversionId}.pdf`;
 
     const fileContent = fs.readFileSync(outputPdfPath);
@@ -88,7 +100,9 @@ export class ConversionService {
       Key: convertedKey,
     });
 
-    const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, { expiresIn: 600 });
+    const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, {
+      expiresIn: 600,
+    });
 
     console.log('Pre-signed URL:', signedUrl);
 

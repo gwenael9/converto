@@ -53,8 +53,8 @@ export class ConversionService {
 
     await this.conversionRepository.save(conversion);
 
-     // Étape 2 : Uploader sur S3
-    const bucketName = 'original-files';
+    // Étape 2 : Uploader sur S3
+    const bucketName = process.env.S3_BUCKET;
     const key = `${conversion.id}-${filename}`;
 
     // Sauvegarder temporairement en local
