@@ -29,3 +29,11 @@ jobs:
           context: "{{defaultContext}}:api"
           file: "Dockerfile.production"
           tags: gwenael9/converto-api:latest
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: "{{defaultContext}}:frontend"
+          file: "Dockerfile.production"
+          tags: gwenael9/converto-frontend:latest
