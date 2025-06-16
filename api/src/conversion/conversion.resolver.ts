@@ -2,7 +2,6 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ConversionService } from './conversion.service';
 import { ConversionInput } from './dto/conversion.input';
 import { ConversionOutput } from './dto/conversion.output';
-import { FileUpload } from 'graphql-upload-ts';
 
 @Resolver(() => ConversionOutput)
 export class ConversionResolver {

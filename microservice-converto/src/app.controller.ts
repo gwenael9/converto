@@ -10,8 +10,11 @@ export class AppController {
     @Query('bucket') bucket: string,
     @Query('key') key: string,
     @Query('conversionId') conversionId: string,
-  ): Promise<string> {
-    const result = await this.conversionService.convertAndUploadFromS3(bucket, key, conversionId);
-    return result;
+  ): Promise<{ url: string }> {
+    return await this.conversionService.convertAndUploadFromS3(
+      bucket,
+      key,
+      conversionId,
+    );
   }
 }

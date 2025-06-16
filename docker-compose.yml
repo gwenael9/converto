@@ -38,6 +38,15 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    entrypoint: >
+      /bin/sh -c "
+        minio server /data --console-address ':9001' &
+        sleep 10
+        mc alias set myminio http://localhost:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY}
+        mc mb --ignore-existing myminio/${S3_BUCKET}
+        mc anonymous set public myminio/${S3_BUCKET}
+        wait
+      "
   
   rabbitmq:
     image: rabbitmq:3-management
@@ -50,16 +59,17 @@ services:
       - ${RABBITMQ_DEFAULT_PASS}
   
   microservice-converto:
-    build:
-      context: ./microservice-converto
-    container_name: microservice-converto
+    build: microservice-converto
     ports:
       - "3000:3000"
+    env_file:
+      - ./.env
     environment:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
     depends_on:
       - minio
+      - rabbitmq
     volumes:
       - ./microservice-converto/test-files:/app/test-files
 

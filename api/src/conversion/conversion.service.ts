@@ -53,8 +53,8 @@ export class ConversionService {
 
     await this.conversionRepository.save(conversion);
 
-     // Étape 2 : Uploader sur S3
-    const bucketName = 'original-files';
+    // Étape 2 : Uploader sur S3
+    const bucketName = process.env.S3_BUCKET;
     const key = `${conversion.id}-${filename}`;
 
     // Sauvegarder temporairement en local
@@ -103,12 +103,30 @@ export class ConversionService {
 
     console.log('Sending message to conversion microservice:', message);
 
-    this.conversionClient.emit('convert-docx-to-pdf', message);
+    this.conversionClient.send('convert-docx-to-pdf', message).subscribe({
+      next: async (url: string) => {
+        // Mettre à jour l'URL du fichier converti dans la base de données
+        await this.conversionRepository.update(conversion.id, {
+          status: ConversionStatus.COMPLETED,
+          convertedFileUrl: url,
+        });
+      },
+      error: async (error) => {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        await this.conversionRepository.update(conversion.id, {
+          status: ConversionStatus.FAILED,
+        });
+      },
+      complete: () => {
+        console.log('Conversion request completed');
+      },
+    });
 
     // Retourner l'output
     return {
       id: conversion.id,
       status: ConversionStatus.PENDING,
+      convertedFileUrl: conversion.convertedFileUrl,
     };
   }
 
@@ -121,10 +139,6 @@ export class ConversionService {
       throw new Error('Conversion non trouvée');
     }
 
-    return {
-      id: conversion.id,
-      status: conversion.status,
-      convertedFileUrl: undefined, // TODO: tu le rempliras quand la conversion sera faite
-    };
+    return conversion;
   }
 }
