@@ -6,8 +6,15 @@ export class AppController {
   constructor(private readonly conversionService: ConversionService) {}
 
   @Get('test-convert')
-  async testConvert(@Query('path') localPath: string): Promise<string> {
-    const result = await this.conversionService.convertAndUpload({ localPath });
-    return result;
+  async testConvert(
+    @Query('bucket') bucket: string,
+    @Query('key') key: string,
+    @Query('conversionId') conversionId: string,
+  ): Promise<{ url: string }> {
+    return await this.conversionService.convertAndUploadFromS3(
+      bucket,
+      key,
+      conversionId,
+    );
   }
 }
