@@ -56,9 +56,7 @@ services:
       - app-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.production
+    image: gwenael9/converto-frontend:latest
     environment:
       - NODE_ENV=production
     restart: unless-stopped
