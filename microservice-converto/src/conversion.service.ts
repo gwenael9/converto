@@ -15,11 +15,22 @@ const execAsync = promisify(exec);
 @Injectable()
 export class ConversionService {
   private s3Client: S3Client;
+  private s3PublicClient: S3Client;
 
   constructor() {
     this.s3Client = new S3Client({
       region: 'us-east-1',
-      endpoint: 'http://minio:9000',
+      endpoint: process.env.S3_ENDPOINT,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
+        secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      },
+    });
+
+    this.s3PublicClient = new S3Client({
+      region: 'us-east-1',
+      endpoint: process.env.S3_PUBLIC_ENDPOINT,
       forcePathStyle: true,
       credentials: {
         accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
@@ -28,11 +39,18 @@ export class ConversionService {
     });
   }
 
+  private getPublicUrl(internalUrl: string): string {
+    return internalUrl.replace(
+      process.env.S3_ENDPOINT || '',
+      process.env.S3_PUBLIC_ENDPOINT || '',
+    );
+  }
+
   async convertAndUploadFromS3(
     bucket: string,
     key: string,
     conversionId: string,
-  ): Promise<string> {
+  ): Promise<{ url: string }> {
     console.log(
       `Starting conversion for s3://${bucket}/${key}, conversionId=${conversionId}`,
     );
@@ -50,7 +68,7 @@ export class ConversionService {
     const bodyStream = response.Body as any;
 
     await new Promise<void>((resolve, reject) => {
-      (bodyStream as any).pipe(writeStream);
+      bodyStream.pipe(writeStream);
       bodyStream.on('error', reject);
       writeStream.on('finish', () => resolve());
     });
@@ -94,15 +112,19 @@ export class ConversionService {
 
     console.log(`PDF uploaded to S3: s3://${convertedBucket}/${convertedKey}`);
 
-    // Génération de la pre-signed URL
+    // Génération de la pre-signed URL avec le client public
     const getObjectCommand = new GetObjectCommand({
       Bucket: convertedBucket,
       Key: convertedKey,
     });
 
-    const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, {
-      expiresIn: 600,
-    });
+    const signedUrl = await getSignedUrl(
+      this.s3PublicClient,
+      getObjectCommand,
+      {
+        expiresIn: 600,
+      },
+    );
 
     console.log('Pre-signed URL:', signedUrl);
 
@@ -112,7 +134,9 @@ export class ConversionService {
 
     console.log('Local temp files cleaned up.');
 
-    // On return l'URL
-    return signedUrl;
+    // On return directement l'URL pré-signée
+    return {
+      url: signedUrl,
+    };
   }
 }

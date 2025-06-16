@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation } from "urql";
-import { useState } from "react";
+import { useMutation, useQuery } from "urql";
+import { useState, useEffect } from "react";
 
 const CONVERT_FILE_MUTATION = `
   mutation ConvertFile($input: ConversionInput!) {
@@ -14,18 +14,67 @@ const CONVERT_FILE_MUTATION = `
   }
 `;
 
+const GET_CONVERSION_STATUS = `
+  query GetConversionStatus($id: String!) {
+    getConversionStatus(id: $id) {
+      id
+      status
+      convertedFileUrl
+      error
+    }
+  }
+`;
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function ConversionForm() {
   const [file, setFile] = useState<File | null>(null);
-  const [sourceType, setSourceType] = useState<string | undefined>(
-    file?.type || undefined
-  );
-  const [targetType, setTargetType] = useState<"PDF" | "DOCX">("DOCX");
+
+  const [sourceType, setSourceType] = useState<"PDF" | "DOCX">("DOCX");
+  const [targetType, setTargetType] = useState<"PDF" | "DOCX">("PDF");
+
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conversionId, setConversionId] = useState<string | null>(null);
 
   const [{ fetching }, convertFile] = useMutation(CONVERT_FILE_MUTATION);
+  const [{ data: statusData }, executeQuery] = useQuery({
+    query: GET_CONVERSION_STATUS,
+    variables: { id: conversionId },
+    pause: !conversionId,
+  });
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (conversionId) {
+      // Configurer le polling toutes les secondes
+      intervalId = setInterval(() => {
+        executeQuery();
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [conversionId, executeQuery]);
+
+  useEffect(() => {
+    if (statusData?.getConversionStatus) {
+      setResult(statusData.getConversionStatus);
+      if (statusData.getConversionStatus.status !== "PENDING") {
+        setConversionId(null);
+      }
+    }
+  }, [statusData]);
+
+  useEffect(() => {
+    if (result?.id && result.status === "PENDING") {
+      setConversionId(result.id);
+    }
+  }, [result?.id, result?.status]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -60,13 +109,31 @@ export function ConversionForm() {
       });
 
       console.log("result", result);
-
       setResult(result.data?.convertFile);
     } catch (err) {
       console.error("Erreur de conversion:", err);
       setError(
         "Une erreur s'est produite lors de la conversion. Veuillez réessayer."
       );
+    }
+  };
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Erreur lors du téléchargement:", error);
+      setError("Erreur lors du téléchargement du fichier");
     }
   };
 
@@ -95,12 +162,11 @@ export function ConversionForm() {
           </label>
           <select
             value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
+            onChange={(e) => setSourceType(e.target.value as "PDF" | "DOCX")}
             className="w-full p-2 border rounded"
           >
             <option value="PDF">PDF</option>
             <option value="DOCX">DOCX</option>
-            <option value="sourceeeeee">{sourceType}</option>
           </select>
         </div>
 
@@ -131,15 +197,21 @@ export function ConversionForm() {
         <div className="mt-4 p-4 border rounded">
           <h3 className="font-bold mb-2">Résultat de la conversion :</h3>
           <p>Statut : {result.status}</p>
+          {result.status === "PENDING" && (
+            <p className="text-blue-500">Conversion en cours...</p>
+          )}
           {result.convertedFileUrl && (
-            <a
-              href={result.convertedFileUrl}
-              className="text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() =>
+                handleDownload(
+                  result.convertedFileUrl,
+                  `converted-${result.id}.pdf`
+                )
+              }
+              className="text-blue-500 hover:underline cursor-pointer"
             >
               Télécharger le fichier converti
-            </a>
+            </button>
           )}
           {result.error && (
             <p className="text-red-500">Erreur : {result.error}</p>
