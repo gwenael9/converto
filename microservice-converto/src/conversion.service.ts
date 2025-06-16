@@ -3,7 +3,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const execAsync = promisify(exec);
@@ -11,11 +15,22 @@ const execAsync = promisify(exec);
 @Injectable()
 export class ConversionService {
   private s3Client: S3Client;
+  private s3PublicClient: S3Client;
 
   constructor() {
     this.s3Client = new S3Client({
       region: 'us-east-1',
-      endpoint: 'http://minio:9000',
+      endpoint: process.env.S3_ENDPOINT,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
+        secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      },
+    });
+
+    this.s3PublicClient = new S3Client({
+      region: 'us-east-1',
+      endpoint: process.env.S3_PUBLIC_ENDPOINT,
       forcePathStyle: true,
       credentials: {
         accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
@@ -24,71 +39,104 @@ export class ConversionService {
     });
   }
 
-  async convertAndUpload(data: any): Promise<string> {
-    // Simulation : on reçoit un "chemin local" (plus tard ce sera une URL S3)
-    const localDocxPath = data?.localPath || path.resolve(__dirname, '../test-files/TEST.docx');
+  private getPublicUrl(internalUrl: string): string {
+    return internalUrl.replace(
+      process.env.S3_ENDPOINT || '',
+      process.env.S3_PUBLIC_ENDPOINT || '',
+    );
+  }
 
-    console.log('Input file path:', localDocxPath);
+  async convertAndUploadFromS3(
+    bucket: string,
+    key: string,
+    conversionId: string,
+  ): Promise<{ url: string }> {
+    console.log(
+      `Starting conversion for s3://${bucket}/${key}, conversionId=${conversionId}`,
+    );
 
-    if (!fs.existsSync(localDocxPath)) {
-      throw new Error(`Input file not found: ${localDocxPath}`);
+    const localDocxPath = `/tmp/${conversionId}.docx`;
+
+    const getCommand = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+
+    const response = await this.s3Client.send(getCommand);
+
+    const writeStream = fs.createWriteStream(localDocxPath);
+    const bodyStream = response.Body as any;
+
+    await new Promise<void>((resolve, reject) => {
+      bodyStream.pipe(writeStream);
+      bodyStream.on('error', reject);
+      writeStream.on('finish', () => resolve());
+    });
+
+    console.log(`File downloaded to: ${localDocxPath}`);
+
+    // Convertion en .pdf
+    const outputPdfPath = `/tmp/${conversionId}.pdf`;
+
+    const command = `soffice --headless --convert-to pdf "${localDocxPath}" --outdir "/tmp"`;
+
+    console.log('Running command:', command);
+
+    const { stdout, stderr } = await execAsync(command);
+
+    console.log('LibreOffice output:', stdout);
+    if (stderr) console.error('LibreOffice error:', stderr);
+
+    if (!fs.existsSync(outputPdfPath)) {
+      throw new Error(`Output PDF not found: ${outputPdfPath}`);
     }
 
-    const outputDir = path.dirname(localDocxPath);
+    console.log('PDF generated:', outputPdfPath);
 
-    const command = `soffice --headless --convert-to pdf "${localDocxPath}" --outdir "${outputDir}"`;
+    console.log('bucket', process.env.S3_BUCKET_CONVERT);
 
-    try {
-      console.log('Running command:', command);
+    // Upload .pdf sur S3
+    const convertedBucket = process.env.S3_BUCKET_CONVERT;
+    const convertedKey = `${conversionId}.pdf`;
 
-      const { stdout, stderr } = await execAsync(command);
+    const fileContent = fs.readFileSync(outputPdfPath);
 
-      console.log('LibreOffice output:', stdout);
-      if (stderr) console.error('LibreOffice error:', stderr);
+    const uploadCommand = new PutObjectCommand({
+      Bucket: convertedBucket,
+      Key: convertedKey,
+      Body: fileContent,
+      ContentType: 'application/pdf',
+    });
 
-      const fileName = path.basename(localDocxPath);
-      const outputFileName = fileName.replace(/\.docx$/, '.pdf');
-      const outputFilePath = path.join(outputDir, outputFileName);
+    await this.s3Client.send(uploadCommand);
 
-      if (!fs.existsSync(outputFilePath)) {
-        throw new Error(`Output PDF not found: ${outputFilePath}`);
-      }
+    console.log(`PDF uploaded to S3: s3://${convertedBucket}/${convertedKey}`);
 
-      console.log('Conversion done. PDF saved at:', outputFilePath);
+    // Génération de la pre-signed URL avec le client public
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: convertedBucket,
+      Key: convertedKey,
+    });
 
-      // Upload vers S3
-      const bucketName = 'converted-files';
-      const key = outputFileName;
+    const signedUrl = await getSignedUrl(
+      this.s3PublicClient,
+      getObjectCommand,
+      {
+        expiresIn: 600,
+      },
+    );
 
-      const fileContent = fs.readFileSync(outputFilePath);
+    console.log('Pre-signed URL:', signedUrl);
 
-      const uploadCommand = new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        Body: fileContent,
-        ContentType: 'application/pdf',
-      });
+    // Nettoyage des fichiers locaux
+    fs.unlinkSync(localDocxPath);
+    fs.unlinkSync(outputPdfPath);
 
-      await this.s3Client.send(uploadCommand);
+    console.log('Local temp files cleaned up.');
 
-      console.log(`File uploaded to S3: ${bucketName}/${key}`);
-
-      fs.unlinkSync(outputFilePath);
-      console.log(`Local file deleted: ${outputFilePath}`);
-
-      const getObjectCommand = new GetObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-      });
-
-      const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, { expiresIn: 600 });
-
-      console.log('Pre-signed URL:', signedUrl);
-
-      return signedUrl;
-    } catch (error) {
-      console.error('Error during conversion or upload:', error);
-      throw new Error('Conversion and upload failed');
-    }
+    // On return directement l'URL pré-signée
+    return {
+      url: signedUrl,
+    };
   }
 }

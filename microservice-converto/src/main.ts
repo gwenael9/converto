@@ -1,29 +1,30 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  await app.listen(3000);
-  console.log('HTTP server listening on port 3000');
+  const port = process.env.PORT_MICROSERVICE || 3000;
+  await app.listen(port);
+  console.log(`HTTP server ready at http://localhost:${port}`);
+
+  console.log('connexiooooon', process.env.RABBITMQ_DEFAULT_USER);
+
+  app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: [
+        `amqp://${process.env.RABBITMQ_DEFAULT_USER}:${process.env.RABBITMQ_DEFAULT_PASS}@rabbitmq:5672`,
+      ],
+      queue: 'convert-docx-to-pdf',
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
+
+  await app.startAllMicroservices();
+  console.log('Microservice RabbitMQ is now listening...');
 }
 bootstrap();
-
-// async function bootstrap() {
-//   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-//     transport: Transport.RMQ,
-//     options: {
-//       urls: ['amqp://localhost:5672'], // ton URL RabbitMQ
-//       queue: 'convert_queue',          // nom de la queue
-//       queueOptions: {
-//         durable: true,
-//       },
-//     },
-//   });
-
-//   await app.listen();
-//   console.log('Microservice Converto is listening to RabbitMQ...');
-// }
-// bootstrap();
-

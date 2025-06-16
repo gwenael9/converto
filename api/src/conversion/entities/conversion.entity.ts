@@ -51,6 +51,10 @@ export class ConversionEntity {
   @Column({ nullable: true })
   fileName: string;
 
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  convertedFileUrl: string;
+
   @Field(() => Date)
   @CreateDateColumn()
   createdAt: Date;

@@ -1,14 +1,19 @@
-FROM node:24-slim
+FROM node:20-alpine
 
 # Installe LibreOffice
-RUN apt-get update && \
-    apt-get install -y libreoffice && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache libreoffice
 
 WORKDIR /app
+
+# Copie des fichiers de configuration
 COPY package*.json ./
-RUN npm install
+COPY tsconfig.json ./
+
+# Installation des dépendances
+RUN npm i
+
+# Copie du code source
 COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "start"]
+
+# Commande de démarrage
+CMD ["npm", "run", "start:dev"]
