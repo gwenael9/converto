@@ -8,8 +8,6 @@ export class ConversionController {
 
   @MessagePattern('convert-docx-to-pdf')
   async handleConversionRequest(@Payload() data: any): Promise<string> {
-    console.log('Received message in microservice:', data);
-
     const { sourceS3, conversionId } = data;
 
     try {
@@ -20,11 +18,10 @@ export class ConversionController {
       );
 
       console.log('Conversion result in microservice:', result);
-
       return result.url;
     } catch (error) {
       console.error('Error in microservice:', error);
-      throw error;
+      return ''; 
     }
   }
 }

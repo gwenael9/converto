@@ -1,19 +1,24 @@
 FROM node:20-alpine
 
-# Installe LibreOffice
-RUN apk add --no-cache libreoffice
+# Installation des dépendances nécessaires à LibreOffice
+RUN apk add --no-cache \
+    libreoffice \
+    openjdk17 \
+    fontconfig \
+    ttf-dejavu \
+    ttf-liberation \
+    bash \
+    curl
 
+# Dossier de travail
 WORKDIR /app
 
-# Copie des fichiers de configuration
+# Copie et installation des dépendances Node.js
 COPY package*.json ./
-COPY tsconfig.json ./
-
-# Installation des dépendances
-RUN npm i
+RUN npm install
 
 # Copie du code source
 COPY . .
 
-# Commande de démarrage
+# Commande de lancement du microservice
 CMD ["npm", "run", "start:dev"]

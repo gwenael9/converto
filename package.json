@@ -4,7 +4,9 @@
     "description": "",
     "scripts": {
       "prepare": "husky install",
-      "dev": "docker compose up --build"
+      "dev": "docker compose up --build",
+      "test:e2e": "jest --config ./test/jest-e2e.json",
+      "e2e:docker": "docker compose up --build --abort-on-container-exit e2e-tests"
     },
     "devDependencies": {
       "husky": "^8.0.3"

@@ -5,11 +5,7 @@ import { Transport } from '@nestjs/microservices';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const port = process.env.PORT_MICROSERVICE || 3000;
-  await app.listen(port);
-  console.log(`HTTP server ready at http://localhost:${port}`);
-
-  console.log('connexiooooon', process.env.RABBITMQ_DEFAULT_USER);
+  console.log('Connexion à RabbitMQ avec :', process.env.RABBITMQ_DEFAULT_USER);
 
   app.connectMicroservice({
     transport: Transport.RMQ,
@@ -21,10 +17,16 @@ async function bootstrap() {
       queueOptions: {
         durable: true,
       },
+      prefetchCount: 1,
     },
   });
 
   await app.startAllMicroservices();
   console.log('Microservice RabbitMQ is now listening...');
+
+  const port = process.env.PORT_MICROSERVICE || 3000;
+  await app.listen(port);
+  console.log(`HTTP server ready at http://localhost:${port}`);
 }
+
 bootstrap();

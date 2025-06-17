@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType({ description: 'Résultat de la conversion de fichier' })
 export class ConversionOutput {
@@ -18,6 +18,12 @@ export class ConversionOutput {
       'URL du fichier converti, disponible une fois la conversion terminée',
   })
   convertedFileUrl?: string;
+
+  @Field(() => Int, {
+    nullable: true,
+    description: 'Position dans la file d’attente (0 = immédiat)',
+  })
+  queuePosition?: number;
 
   @Field(() => String, {
     nullable: true,

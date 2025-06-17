@@ -11,6 +11,8 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController, ConversionController],
-  providers: [ConversionService],
+  providers: [
+    ConversionService,
+  ],
 })
 export class AppModule {}

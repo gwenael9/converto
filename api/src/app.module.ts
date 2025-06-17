@@ -10,10 +10,10 @@ import { databaseConfig } from './config';
 
 @Module({
   imports: [
-    // ConfigModule.forRoot({
-    //   envFilePath: '../.env',
-    //   isGlobal: true,
-    // }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env.test', '.env'],
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       graphiql: true,

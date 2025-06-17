@@ -1,11 +1,13 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ConversionService } from './conversion.service';
 import { ConversionInput } from './dto/conversion.input';
 import { ConversionOutput } from './dto/conversion.output';
 
 @Resolver(() => ConversionOutput)
 export class ConversionResolver {
-  constructor(private readonly conversionService: ConversionService) {}
+  constructor(
+    private readonly conversionService: ConversionService,
+  ) {}
 
   @Mutation(() => ConversionOutput, {
     description: 'Convertit un fichier PDF en DOCX ou vice versa',

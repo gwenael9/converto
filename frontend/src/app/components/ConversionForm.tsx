@@ -10,6 +10,7 @@ const CONVERT_FILE_MUTATION = `
       status
       convertedFileUrl
       error
+      queuePosition
     }
   }
 `;
@@ -25,17 +26,24 @@ const GET_CONVERSION_STATUS = `
   }
 `;
 
+const GET_QUEUE_LENGTH = `
+  query {
+    getQueueLength
+  }
+`;
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function ConversionForm() {
   const [file, setFile] = useState<File | null>(null);
-
   const [sourceType, setSourceType] = useState<"PDF" | "DOCX">("DOCX");
   const [targetType, setTargetType] = useState<"PDF" | "DOCX">("PDF");
 
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversionId, setConversionId] = useState<string | null>(null);
+
+  const [queueLength, setQueueLength] = useState<number | null>(null);
 
   const [{ fetching }, convertFile] = useMutation(CONVERT_FILE_MUTATION);
   const [{ data: statusData }, executeQuery] = useQuery({
@@ -44,23 +52,36 @@ export function ConversionForm() {
     pause: !conversionId,
   });
 
+  // Poll conversion status
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-
     if (conversionId) {
-      // Configurer le polling toutes les secondes
       intervalId = setInterval(() => {
         executeQuery();
       }, 1000);
     }
-
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      if (intervalId) clearInterval(intervalId);
     };
   }, [conversionId, executeQuery]);
 
+  // Poll global queue length
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      const res = await fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: GET_QUEUE_LENGTH }),
+      });
+
+      const json = await res.json();
+      setQueueLength(json.data?.getQueueLength ?? null);
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Mise à jour du résultat après polling
   useEffect(() => {
     if (statusData?.getConversionStatus) {
       setResult(statusData.getConversionStatus);
@@ -70,6 +91,7 @@ export function ConversionForm() {
     }
   }, [statusData]);
 
+  // Suivi ID
   useEffect(() => {
     if (result?.id && result.status === "PENDING") {
       setConversionId(result.id);
@@ -108,7 +130,6 @@ export function ConversionForm() {
         },
       });
 
-      console.log("result", result);
       setResult(result.data?.convertFile);
     } catch (err) {
       console.error("Erreur de conversion:", err);
@@ -140,6 +161,12 @@ export function ConversionForm() {
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-6">Convertir un fichier</h2>
+
+      {queueLength !== null && (
+        <div className="mb-4 p-2 text-sm text-gray-700 bg-gray-100 rounded">
+          Utilisateurs en attente de conversion : {queueLength}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -197,16 +224,19 @@ export function ConversionForm() {
         <div className="mt-4 p-4 border rounded">
           <h3 className="font-bold mb-2">Résultat de la conversion :</h3>
           <p>Statut : {result.status}</p>
+          {typeof result.queuePosition === "number" && (
+            <p>
+              Position dans la file :{" "}
+              <span className="font-semibold">{result.queuePosition}</span>
+            </p>
+          )}
           {result.status === "PENDING" && (
             <p className="text-blue-500">Conversion en cours...</p>
           )}
           {result.convertedFileUrl && (
             <button
               onClick={() =>
-                handleDownload(
-                  result.convertedFileUrl,
-                  `converted-${result.id}.pdf`
-                )
+                handleDownload(result.convertedFileUrl, `converted-${result.id}.pdf`)
               }
               className="text-blue-500 hover:underline cursor-pointer"
             >

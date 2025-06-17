@@ -72,6 +72,7 @@ services:
       - rabbitmq
     volumes:
       - ./microservice-converto/test-files:/app/test-files
+      - ./microservice-converto/tmp:/app/tmp
 
   api:
     depends_on:
@@ -88,6 +89,18 @@ services:
       - ./api:/app
       - /app/node_modules
     command: npm run start:dev
+
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: api/test/Dockerfile
+    depends_on:
+      - api
+      - rabbitmq
+      - db
+      - minio
+    env_file:
+      - .env.test
 
 volumes:
   minio_data:
