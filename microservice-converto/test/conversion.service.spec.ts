@@ -1,10 +1,10 @@
-import { ConversionService } from '../src/app.service';
+import { AppService } from '../src/app.service';
 
 describe('ConversionService', () => {
-  let service: ConversionService;
+  let service: AppService;
 
   beforeEach(() => {
-    service = new ConversionService();
+    service = new AppService();
   });
 
   it('should convert DOCX to PDF', async () => {
