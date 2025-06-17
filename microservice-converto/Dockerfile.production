@@ -22,7 +22,14 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Installation de LibreOffice
-RUN apk add --no-cache libreoffice
+RUN apk add --no-cache \
+    libreoffice \
+    openjdk17 \
+    fontconfig \
+    ttf-dejavu \
+    ttf-liberation \
+    bash \
+    curl
 
 # Copie des fichiers nécessaires depuis le stage de build
 COPY --from=builder /app/dist ./dist
