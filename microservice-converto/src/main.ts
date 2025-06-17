@@ -12,10 +12,7 @@ async function bootstrap() {
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
-      urls: [
-        process.env.RABBITMQ_URL,
-        // `amqp://${process.env.RABBITMQ_DEFAULT_USER}:${process.env.RABBITMQ_DEFAULT_PASS}@rabbitmq:5672`,
-      ],
+      urls: [process.env.RABBITMQ_URL],
       queue: 'convert-docx-to-pdf',
       queueOptions: {
         durable: true,

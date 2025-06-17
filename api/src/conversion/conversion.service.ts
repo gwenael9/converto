@@ -41,8 +41,6 @@ export class ConversionService {
   async convertFile(input: ConversionInput): Promise<ConversionOutput> {
     const { filename, mimetype, encoding, createReadStream } = await input.file;
 
-    console.log('File details:', { filename, mimetype, encoding });
-
     // Étape 1 : Sauvegarder dans la BDD
     const conversion = this.conversionRepository.create({
       status: ConversionStatus.PENDING,
@@ -69,8 +67,6 @@ export class ConversionService {
       writeStream.on('finish', resolve);
     });
 
-    console.log(`File saved locally: ${localPath}`);
-
     // Lire en buffer
     const fileBuffer = await fs.promises.readFile(localPath);
 
@@ -85,12 +81,8 @@ export class ConversionService {
 
     await this.s3Client.send(uploadCommand);
 
-    console.log(`File uploaded to S3: ${bucketName}/${key}`);
-
     // Nettoyer le fichier local
     await fs.promises.unlink(localPath);
-
-    console.log(`Local file deleted: ${localPath}`);
 
     // Étape 3 : Envoyer message RabbitMQ
     const message = {
@@ -100,8 +92,6 @@ export class ConversionService {
       },
       conversionId: conversion.id,
     };
-
-    console.log('Sending message to conversion microservice:', message);
 
     this.conversionClient.send('convert-docx-to-pdf', message).subscribe({
       next: async (url: string) => {
@@ -116,9 +106,6 @@ export class ConversionService {
         await this.conversionRepository.update(conversion.id, {
           status: ConversionStatus.FAILED,
         });
-      },
-      complete: () => {
-        console.log('Conversion request completed');
       },
     });
 
