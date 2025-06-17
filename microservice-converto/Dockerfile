@@ -1,7 +1,14 @@
 FROM node:20-alpine
 
 # Installe LibreOffice
-RUN apk add --no-cache libreoffice
+RUN apk add --no-cache \
+    libreoffice \
+    openjdk17 \
+    fontconfig \
+    ttf-dejavu \
+    ttf-liberation \
+    bash \
+    curl
 
 WORKDIR /app
 
