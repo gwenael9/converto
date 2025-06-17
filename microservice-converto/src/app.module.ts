@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { ConversionController } from './conversion.controller';
-import { ConversionService } from './conversion.service';
+import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -10,7 +9,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
   ],
-  controllers: [AppController, ConversionController],
-  providers: [ConversionService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

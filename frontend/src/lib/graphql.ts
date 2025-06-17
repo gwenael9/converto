@@ -1,11 +1,11 @@
 import { createClient } from "urql";
-import { cacheExchange, fetchExchange } from "@urql/core";
+import { cacheExchange } from "@urql/core";
 import { multipartFetchExchange } from "@urql/exchange-multipart-fetch";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const GRAPHQL_ENDPOINT = isDevelopment
   ? "http://localhost:4000/graphql"
-  : "/api/graphql";
+  : "/graphql";
 
 export const client = createClient({
   url: GRAPHQL_ENDPOINT,

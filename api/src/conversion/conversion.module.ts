@@ -13,7 +13,7 @@ import { ConversionEntity } from './entities/conversion.entity';
         name: 'CONVERSION_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://rabbitmq:5672'], // le service RabbitMQ sera nommé "rabbitmq" dans docker-compose
+          urls: [process.env.RABBITMQ_URL],
           queue: 'convert-docx-to-pdf',
           queueOptions: {
             durable: true,
