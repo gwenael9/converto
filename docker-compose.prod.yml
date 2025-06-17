@@ -36,20 +36,37 @@ services:
     env_file:
       - ./.env.prod
     environment:
-      - DB_HOST=${DB_HOST}
+      - DB_HOST=db
     restart: always
+    networks:
+      - app-network
 
   gateway:
     build:
       context: ./gateway
       dockerfile: Dockerfile.production
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - api
       - minio
+      - frontend
     restart: always
+    networks:
+      - app-network
+
+  frontend:
+    image: gwenael9/converto-frontend:latest
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
   minio_data:
+
+networks:
+  app-network:
+    driver: bridge
