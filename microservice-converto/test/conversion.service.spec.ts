@@ -1,4 +1,4 @@
-import { ConversionService } from '../src/conversion.service';
+import { ConversionService } from '../src/app.service';
 
 describe('ConversionService', () => {
   let service: ConversionService;

@@ -52,7 +52,7 @@ export class ConversionEntity {
   fileName: string;
 
   @Field(() => String, { nullable: true })
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 500 })
   convertedFileUrl: string;
 
   @Field(() => Date)

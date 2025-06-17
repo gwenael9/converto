@@ -37,3 +37,11 @@ jobs:
           context: "{{defaultContext}}:frontend"
           file: "Dockerfile.production"
           tags: gwenael9/converto-frontend:latest
+
+      - name: Build and push Microservice image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: "{{defaultContext}}:microservice-converto"
+          file: "Dockerfile.production"
+          tags: gwenael9/converto-microservice:latest

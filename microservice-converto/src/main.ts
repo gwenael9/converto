@@ -9,14 +9,10 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`HTTP server ready at http://localhost:${port}`);
 
-  console.log('connexiooooon', process.env.RABBITMQ_DEFAULT_USER);
-
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
-      urls: [
-        `amqp://${process.env.RABBITMQ_DEFAULT_USER}:${process.env.RABBITMQ_DEFAULT_PASS}@rabbitmq:5672`,
-      ],
+      urls: [process.env.RABBITMQ_URL],
       queue: 'convert-docx-to-pdf',
       queueOptions: {
         durable: true,

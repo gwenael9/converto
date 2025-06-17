@@ -19,7 +19,7 @@ export class ConversionService {
 
   constructor() {
     this.s3Client = new S3Client({
-      region: 'us-east-1',
+      region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT,
       forcePathStyle: true,
       credentials: {
@@ -29,7 +29,7 @@ export class ConversionService {
     });
 
     this.s3PublicClient = new S3Client({
-      region: 'us-east-1',
+      region: process.env.S3_REGION,
       endpoint: process.env.S3_PUBLIC_ENDPOINT,
       forcePathStyle: true,
       credentials: {
@@ -37,13 +37,6 @@ export class ConversionService {
         secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
       },
     });
-  }
-
-  private getPublicUrl(internalUrl: string): string {
-    return internalUrl.replace(
-      process.env.S3_ENDPOINT || '',
-      process.env.S3_PUBLIC_ENDPOINT || '',
-    );
   }
 
   async convertAndUploadFromS3(
@@ -73,36 +66,25 @@ export class ConversionService {
       writeStream.on('finish', () => resolve());
     });
 
-    console.log(`File downloaded to: ${localDocxPath}`);
-
     // Convertion en .pdf
     const outputPdfPath = `/tmp/${conversionId}.pdf`;
 
     const command = `soffice --headless --convert-to pdf "${localDocxPath}" --outdir "/tmp"`;
 
-    console.log('Running command:', command);
-
     const { stdout, stderr } = await execAsync(command);
 
-    console.log('LibreOffice output:', stdout);
     if (stderr) console.error('LibreOffice error:', stderr);
 
     if (!fs.existsSync(outputPdfPath)) {
       throw new Error(`Output PDF not found: ${outputPdfPath}`);
     }
 
-    console.log('PDF generated:', outputPdfPath);
-
-    console.log('bucket', process.env.S3_BUCKET_CONVERT);
-
-    // Upload .pdf sur S3
-    const convertedBucket = process.env.S3_BUCKET_CONVERT;
-    const convertedKey = `${conversionId}.pdf`;
+    const convertedKey = `converted-files/${conversionId}.pdf`;
 
     const fileContent = fs.readFileSync(outputPdfPath);
 
     const uploadCommand = new PutObjectCommand({
-      Bucket: convertedBucket,
+      Bucket: bucket,
       Key: convertedKey,
       Body: fileContent,
       ContentType: 'application/pdf',
@@ -110,11 +92,9 @@ export class ConversionService {
 
     await this.s3Client.send(uploadCommand);
 
-    console.log(`PDF uploaded to S3: s3://${convertedBucket}/${convertedKey}`);
-
     // Génération de la pre-signed URL avec le client public
     const getObjectCommand = new GetObjectCommand({
-      Bucket: convertedBucket,
+      Bucket: bucket,
       Key: convertedKey,
     });
 
@@ -126,13 +106,9 @@ export class ConversionService {
       },
     );
 
-    console.log('Pre-signed URL:', signedUrl);
-
     // Nettoyage des fichiers locaux
     fs.unlinkSync(localDocxPath);
     fs.unlinkSync(outputPdfPath);
-
-    console.log('Local temp files cleaned up.');
 
     // On return directement l'URL pré-signée
     return {

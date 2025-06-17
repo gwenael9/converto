@@ -3,6 +3,13 @@
 import { useMutation, useQuery } from "urql";
 import { useState, useEffect } from "react";
 
+interface ConversionResult {
+  id: string;
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  convertedFileUrl?: string;
+  error?: string;
+}
+
 const CONVERT_FILE_MUTATION = `
   mutation ConvertFile($input: ConversionInput!) {
     convertFile(input: $input) {
@@ -33,7 +40,7 @@ export function ConversionForm() {
   const [sourceType, setSourceType] = useState<"PDF" | "DOCX">("DOCX");
   const [targetType, setTargetType] = useState<"PDF" | "DOCX">("PDF");
 
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ConversionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversionId, setConversionId] = useState<string | null>(null);
 
@@ -118,7 +125,12 @@ export function ConversionForm() {
     }
   };
 
-  const handleDownload = async (url: string, filename: string) => {
+  const handleDownload = async (url: string | undefined, filename: string) => {
+    if (!url) {
+      setError("URL de téléchargement non disponible");
+      return;
+    }
+
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -186,10 +198,10 @@ export function ConversionForm() {
 
         <button
           type="submit"
-          disabled={fetching || !file}
+          disabled={!!conversionId || fetching}
           className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:bg-gray-400"
         >
-          {fetching ? "Conversion en cours..." : "Convertir"}
+          {!!conversionId ? "Conversion en cours..." : "Convertir"}
         </button>
       </form>
 
