@@ -18,12 +18,12 @@ export class ConversionService {
   private readonly uploadsDir = join(process.cwd(), 'uploads');
 
   private s3Client = new S3Client({
-    region: 'us-east-1',
-    endpoint: 'http://minio:9000',
+    region: process.env.S3_REGION,
+    endpoint: process.env.S3_ENDPOINT,
     forcePathStyle: true,
     credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
-      secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      accessKeyId: process.env.S3_ACCESS_KEY,
+      secretAccessKey: process.env.S3_SECRET_KEY,
     },
   });
 
@@ -55,7 +55,7 @@ export class ConversionService {
 
     // Étape 2 : Uploader sur S3
     const bucketName = process.env.S3_BUCKET;
-    const key = `${conversion.id}-${filename}`;
+    const key = `original-files/${conversion.id}-${filename}`;
 
     // Sauvegarder temporairement en local
     const localPath = join(this.uploadsDir, `${conversion.id}-${filename}`);

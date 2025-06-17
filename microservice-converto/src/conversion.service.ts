@@ -17,9 +17,19 @@ export class ConversionService {
   private s3Client: S3Client;
   private s3PublicClient: S3Client;
 
+  // private s3Client = new S3Client({
+  //   region: 'us-east-1',
+  //   endpoint: process.env.S3_ENDPOINT || 'http://minio:9000',
+  //   forcePathStyle: true,
+  //   credentials: {
+  //     accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
+  //     secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+  //   },
+  // });
+
   constructor() {
     this.s3Client = new S3Client({
-      region: 'us-east-1',
+      region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT,
       forcePathStyle: true,
       credentials: {
@@ -29,7 +39,7 @@ export class ConversionService {
     });
 
     this.s3PublicClient = new S3Client({
-      region: 'us-east-1',
+      region: process.env.S3_REGION,
       endpoint: process.env.S3_PUBLIC_ENDPOINT,
       forcePathStyle: true,
       credentials: {
@@ -37,13 +47,6 @@ export class ConversionService {
         secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
       },
     });
-  }
-
-  private getPublicUrl(internalUrl: string): string {
-    return internalUrl.replace(
-      process.env.S3_ENDPOINT || '',
-      process.env.S3_PUBLIC_ENDPOINT || '',
-    );
   }
 
   async convertAndUploadFromS3(
@@ -93,28 +96,30 @@ export class ConversionService {
 
     console.log('PDF generated:', outputPdfPath);
 
-    console.log('bucket', process.env.S3_BUCKET_CONVERT);
+    // console.log('bucket', process.env.S3_BUCKET_CONVERT);
 
     // Upload .pdf sur S3
-    const convertedBucket = process.env.S3_BUCKET_CONVERT;
-    const convertedKey = `${conversionId}.pdf`;
+    // const convertedBucket = process.env.S3_BUCKET_CONVERT;
+    const convertedKey = `converted-files/${conversionId}.pdf`;
 
     const fileContent = fs.readFileSync(outputPdfPath);
 
     const uploadCommand = new PutObjectCommand({
-      Bucket: convertedBucket,
+      Bucket: bucket,
       Key: convertedKey,
       Body: fileContent,
       ContentType: 'application/pdf',
     });
 
+    console.log('avant uplooooad', uploadCommand);
+
     await this.s3Client.send(uploadCommand);
 
-    console.log(`PDF uploaded to S3: s3://${convertedBucket}/${convertedKey}`);
+    // console.log(`PDF uploaded to S3: s3://${convertedBucket}/${convertedKey}`);
 
     // Génération de la pre-signed URL avec le client public
     const getObjectCommand = new GetObjectCommand({
-      Bucket: convertedBucket,
+      Bucket: bucket,
       Key: convertedKey,
     });
 
