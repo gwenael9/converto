@@ -1,20 +1,26 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ConversionService } from './conversion.service';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly conversionService: ConversionService) {}
+  constructor(private readonly appService: AppService) {}
 
-  @Get('test-convert')
-  async testConvert(
-    @Query('bucket') bucket: string,
-    @Query('key') key: string,
-    @Query('conversionId') conversionId: string,
-  ): Promise<{ url: string }> {
-    return await this.conversionService.convertAndUploadFromS3(
-      bucket,
-      key,
-      conversionId,
-    );
+  @MessagePattern('convert-docx-to-pdf')
+  async handleConversionRequest(@Payload() data: any): Promise<string> {
+    const { sourceS3, conversionId } = data;
+
+    try {
+      const result = await this.appService.convertAndUploadFromS3(
+        sourceS3.bucket,
+        sourceS3.key,
+        conversionId,
+      );
+
+      return result.url;
+    } catch (error) {
+      console.error('Error in microservice:', error);
+      throw error;
+    }
   }
 }
