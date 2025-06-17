@@ -40,8 +40,6 @@ describe('Conversion Integration Tests', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    console.log('access', process.env.S3_ACCESS_KEY);
-
     appService = app.get<AppService>(AppService);
     s3Client = new S3Client({
       region: process.env.S3_REGION,

@@ -1,12 +1,8 @@
 name: Integration Tests
 
 on:
-  push:
-    branches:
-      - "**"
   pull_request:
-    branches:
-      - "**"
+    branches: [main, staging, dev]
 
 jobs:
   integration-tests:
