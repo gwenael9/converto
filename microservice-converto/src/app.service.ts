@@ -13,7 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 const execAsync = promisify(exec);
 
 @Injectable()
-export class ConversionService {
+export class AppService {
   private s3Client: S3Client;
   private s3PublicClient: S3Client;
 
