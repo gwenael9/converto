@@ -6,7 +6,7 @@
         "prepare": "husky install",
         "dev": "docker compose up --build",
         "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d",
-        "test": "jest --config ./api/test/jest-e2e.json"
+        "test": "cd ./api && npm run test"
     },
     "devDependencies": {
         "@types/jest": "^29.5.14",
