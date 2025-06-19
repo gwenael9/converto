@@ -36,9 +36,9 @@ jobs:
 
           # Pour les PRs vers dev
           if [[ "${{ github.base_ref }}" == "dev" ]]; then
-            if [[ ! "${{ github.event.pull_request.head.ref }}" =~ ^feature/ ]]; then
-              echo "❌ Les pull requests vers dev doivent venir d'une branche feature/."
-              echo "⚠️  Veuillez créer votre pull request depuis une branche feature/nom-du-dev."
+            if [[ ! "${{ github.event.pull_request.head.ref }}" =~ ^feature/ && ! "${{ github.event.pull_request.head.ref }}" =~ ^fix/ ]]; then
+              echo "❌ Les pull requests vers dev doivent venir d'une branche feature/ ou fix/."
+              echo "⚠️  Veuillez créer votre pull request depuis une branche feature/nom-du-dev ou fix/nom-du-dev."
               exit 1
             fi
           fi
