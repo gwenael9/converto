@@ -3,12 +3,15 @@
     "version": "1.0.0",
     "description": "",
     "scripts": {
-      "prepare": "husky install",
-      "dev": "docker compose up --build",
-      "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d",
-      "test": "jest --config ./api/test/jest-e2e.json"
+        "prepare": "husky install",
+        "dev": "docker compose up --build",
+        "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d",
+        "test": "jest --config ./api/test/jest-e2e.json"
     },
     "devDependencies": {
-      "husky": "^8.0.3"
+        "@types/jest": "^29.5.14",
+        "husky": "^8.0.3",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.4.0"
     }
-  } 
+}
