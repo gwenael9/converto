@@ -7,12 +7,12 @@ on:
 
 jobs:
   integration-tests:
-    uses: gwenael9/converto/.github/workflows/integration-tests.yml@main
+    uses: ./.github/workflows/integration-tests.yml@main
 
   build-and-push-image:
     needs:
       - integration-tests
-    uses: gwenael9/converto/.github/workflows/build-images.yml@main
+    uses: ./.github/workflows/build-images.yml@main
 
   deploy:
     needs:
