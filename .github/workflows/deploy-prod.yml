@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  integration-tests:
-    uses: ./.github/workflows/integration-tests.yml
+  # integration-tests:
+  #   uses: ./.github/workflows/integration-tests.yml
 
   build-and-push-image:
-    needs:
-      - integration-tests
+    # needs:
+    #   - integration-tests
     uses: gwenael9/converto/.github/workflows/build-images.yml@main
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

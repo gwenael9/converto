@@ -9,9 +9,13 @@ jobs:
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
 
+  api-unit-tests:
+    uses: ./.github/workflows/units-tests.yml
+
   build-and-push-image:
     needs:
       - integration-tests
+      - api-unit-tests
     uses: gwenael9/converto/.github/workflows/build-images.yml@main
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
