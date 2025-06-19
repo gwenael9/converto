@@ -1,0 +1,41 @@
+name: Test and Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    uses: ./.github/workflows/integration-tests.yml
+
+  build-and-push-image:
+    needs:
+      - integration-tests
+    uses: gwenael9/converto/.github/workflows/build-images.yml@main
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy:
+    needs:
+      - build-and-push-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /opt/app
+            # Arrêter les conteneurs sans supprimer les volumes
+            docker-compose -f docker-compose.staging.yml down
+            # Mettre à jour les images
+            docker-compose -f docker-compose.staging.yml pull
+            # Redémarrer les conteneurs
+            docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
+            # Nettoyer les images non utilisées
+            docker image prune -f
