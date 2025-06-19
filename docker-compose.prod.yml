@@ -1,3 +1,5 @@
+name: app-prod
+
 services:
   api:
     image: gwenael9/converto-api:latest

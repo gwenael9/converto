@@ -1,3 +1,5 @@
+name: app-staging
+
 services:
   api:
     image: gwenael9/converto-api:staging
