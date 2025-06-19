@@ -1,0 +1,41 @@
+name: Test and Deploy to Main
+
+on:
+  workflow_run:
+    workflows: ["Build Docker Images"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  integration-tests:
+    uses: gwenael9/converto/.github/workflows/integration-tests.yml@main
+
+  build-and-push-image:
+    needs:
+      - integration-tests
+    uses: gwenael9/converto/.github/workflows/build-images.yml@main
+
+  deploy:
+    needs:
+      - build-and-push-image
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Deploy to Main
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /opt/app
+            # Arrêter les conteneurs sans supprimer les volumes
+            docker-compose -f docker-compose.prod.yml down
+            # Mettre à jour les images
+            docker-compose -f docker-compose.prod.yml pull
+            # Redémarrer les conteneurs
+            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+            # Nettoyer les images non utilisées
+            docker image prune -f
