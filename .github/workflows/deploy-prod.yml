@@ -32,9 +32,9 @@ jobs:
           script: |
             cd /opt/app
             # Arrêter les conteneurs sans supprimer les volumes
-            docker-compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml down
             # Mettre à jour les images
-            docker-compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
             # Redémarrer les conteneurs
             docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
             # Nettoyer les images non utilisées
