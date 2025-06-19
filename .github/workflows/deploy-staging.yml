@@ -1,11 +1,9 @@
 name: Test and Deploy to Staging
 
 on:
-  workflow_run:
-    workflows: ["Build Docker Images"]
+  push:
     branches: [staging]
-    types:
-      - completed
+  workflow_dispatch:
 
 jobs:
   integration-tests:
