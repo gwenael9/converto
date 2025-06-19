@@ -19,7 +19,9 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        working-directory: ./api
         run: npm ci
 
       - name: Run unit tests
+        working-directory: ./api
         run: npm run test
