@@ -5,7 +5,8 @@
     "scripts": {
       "prepare": "husky install",
       "dev": "docker compose up --build",
-      "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d"
+      "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d",
+      "test": "jest"
     },
     "devDependencies": {
       "husky": "^8.0.3"
