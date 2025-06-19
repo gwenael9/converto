@@ -21,7 +21,6 @@ jobs:
     needs:
       - build-and-push-image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Deploy to Staging
@@ -33,9 +32,9 @@ jobs:
           script: |
             cd /opt/app
             # Arrêter les conteneurs sans supprimer les volumes
-            docker-compose -f docker-compose.staging.yml down
+            docker compose -f docker-compose.staging.yml down
             # Mettre à jour les images
-            docker-compose -f docker-compose.staging.yml pull
+            docker compose -f docker-compose.staging.yml pull
             # Redémarrer les conteneurs
             docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
             # Nettoyer les images non utilisées
